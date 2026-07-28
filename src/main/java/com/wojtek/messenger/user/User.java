@@ -29,7 +29,7 @@ public class User {
     @Email
     private String email;
 
-    private LocalDateTime joinedAt;
+    private LocalDateTime joinedAt = LocalDateTime.now();
 
 
 }
