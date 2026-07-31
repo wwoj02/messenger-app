@@ -7,6 +7,8 @@ import com.wojtek.messenger.user.User;
 import com.wojtek.messenger.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -16,6 +18,7 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class AuthService {
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public AuthResponse register(RegisterRequest request) {
         User user = new User();
@@ -23,7 +26,7 @@ public class AuthService {
         user.setFirstName(request.firstName());
         user.setLastName(request.lastName());
         user.setEmail(request.email());
-        user.setPassword(request.password());
+        user.setPassword(passwordEncoder.encode(request.password()));
         user.setJoinedAt(LocalDateTime.now());
         userRepository.save(user);
 
@@ -36,7 +39,7 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
-        User user = userRepository.findUserByEmail(request.email());
+        User user = userRepository.findByUsername(request.username());
 
         if (user == null) {
             throw new ResponseStatusException(
@@ -44,7 +47,7 @@ public class AuthService {
                     "User not found");
         }
 
-        if (user.getPassword().equals(request.password()))
+        if (passwordEncoder.matches(request.password(), user.getPassword()))
         {
             return new AuthResponse(
                     user.getId(),
