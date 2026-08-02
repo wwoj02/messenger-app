@@ -3,6 +3,7 @@ package com.wojtek.messenger.user;
 import com.wojtek.messenger.user.dto.UpdateProfileRequest;
 import com.wojtek.messenger.user.dto.UserResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,12 +27,16 @@ public class UserController {
     @PutMapping("/user/{id}")
     public UserResponse updateUser(
             @PathVariable Integer id,
-            @RequestBody UpdateProfileRequest update) {
-        return userService.updateUser(id, update);
+            @RequestBody UpdateProfileRequest update,
+            @AuthenticationPrincipal UserPrincipal principal
+            ) {
+        return userService.updateUser(id, update, principal.getUsername());
     }
 
     @DeleteMapping("/user/{id}")
-    public void deleteUser(@PathVariable Integer id) {
-        userService.deleteUser(id);
+    public void deleteUser(@PathVariable Integer id,
+                           @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        userService.deleteUser(id, principal.getUsername());
     }
 }

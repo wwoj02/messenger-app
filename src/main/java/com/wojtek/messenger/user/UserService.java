@@ -4,6 +4,7 @@ import com.wojtek.messenger.user.dto.UpdateProfileRequest;
 import com.wojtek.messenger.user.dto.UserResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -14,6 +15,7 @@ import java.util.List;
 public class UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final AuthenticationManager authenticationManager;
 
     public List<UserResponse> getAllUsers() {
         List<User> users = userRepository.findAll();
@@ -29,7 +31,16 @@ public class UserService {
         return userMapper.toUserResponse(user);
     }
 
-    public UserResponse updateUser(Integer id, UpdateProfileRequest update) {
+    public UserResponse updateUser(Integer id, UpdateProfileRequest update, String username) {
+        User authenticatedUser = userRepository.findByUsername(username);
+
+        if(!authenticatedUser.getId().equals(id)) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "You can only update your own profile!"
+            );
+        }
+
         User user = userRepository.findById(id).orElseThrow(
                 () -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
@@ -63,7 +74,16 @@ public class UserService {
         return userMapper.toUserResponse(updatedUser);
     }
 
-    public void deleteUser(Integer id) {
+    public void deleteUser(Integer id, String username) {
+        User authenticatedUser = userRepository.findByUsername(username);
+
+        if(!authenticatedUser.getId().equals(id)) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "You can only delete your own profile!"
+            );
+        }
+
         userRepository.deleteById(id);
     }
 }
