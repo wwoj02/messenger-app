@@ -1,6 +1,6 @@
 package com.wojtek.messenger.auth.dto;
 
-public record AuthResponse(
+public record RegisterResponse(
         Integer id,
         String username,
         String firstName,
