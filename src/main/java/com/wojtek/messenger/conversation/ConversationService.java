@@ -21,12 +21,21 @@ public class ConversationService {
     private final ConversationMemberRepository conversationMemberRepository;
     private final ConversationMapper conversationMapper;
 
-    public ConversationResponse createConversation(ConversationRequest request) {
+    public ConversationResponse createConversation(ConversationRequest request, String username) {
         Conversation conversation = new Conversation();
         conversation.setCreatedAt(LocalDateTime.now());
 
+        User sender = userRepository.findByUsername(username);
+
+        if (sender == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "Authenticated user not found"
+            );
+        }
+
         List<Integer> allMembers = new ArrayList<>(request.receivers());
-        allMembers.add(request.senderId()); // temporary variable
+        allMembers.add(sender.getId());
 
 
         if (request.receivers().size() == 1) {
@@ -67,13 +76,23 @@ public class ConversationService {
         return conversationMapper.toConversationResponse(conversation);
     }
 
-    public ConversationResponse getConversation(Integer id) {
-        Conversation conversation = conversationRepository.findById(id).orElseThrow(
-                () -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Conversation not found"
-                ));
+    public ConversationResponse getConversation(Integer id, String username) {
+        User user = userRepository.findByUsername(username);
+        boolean isMember = conversationMemberRepository.existsByConversation_IdAndUser_Id(id, user.getId());
 
-        return conversationMapper.toConversationResponse(conversation);
+        if (isMember) {
+            Conversation conversation = conversationRepository.findById(id).orElseThrow(
+                    () -> new ResponseStatusException(
+                            HttpStatus.NOT_FOUND,
+                            "Conversation not found"
+                    ));
+
+            return conversationMapper.toConversationResponse(conversation);
+        }
+
+        throw new ResponseStatusException(
+                HttpStatus.FORBIDDEN,
+                "No permissions"
+        );
     }
 }
