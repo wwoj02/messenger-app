@@ -1,16 +1,14 @@
 package com.wojtek.messenger.auth;
 
-import com.wojtek.messenger.auth.dto.AuthResponse;
-import com.wojtek.messenger.auth.dto.LoginRequest;
-import com.wojtek.messenger.auth.dto.RegisterRequest;
+import com.wojtek.messenger.auth.dto.*;
+import com.wojtek.messenger.security.JwtService;
 import com.wojtek.messenger.user.User;
 import com.wojtek.messenger.user.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 
@@ -19,8 +17,10 @@ import java.time.LocalDateTime;
 public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
+    private final JwtService jwtService;
 
-    public AuthResponse register(RegisterRequest request) {
+    public RegisterResponse register(RegisterRequest request) {
         User user = new User();
         user.setUsername(request.username());
         user.setFirstName(request.firstName());
@@ -30,7 +30,7 @@ public class AuthService {
         user.setJoinedAt(LocalDateTime.now());
         userRepository.save(user);
 
-        return new AuthResponse(
+        return new RegisterResponse(
                 user.getId(),
                 user.getUsername(),
                 user.getFirstName(),
@@ -38,28 +38,19 @@ public class AuthService {
                 user.getEmail());
     }
 
-    public AuthResponse login(LoginRequest request) {
+    public LoginResponse login(LoginRequest request) {
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.username(), request.password())
+        );
+
         User user = userRepository.findByUsername(request.username());
 
-        if (user == null) {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "User not found");
-        }
-
-        if (passwordEncoder.matches(request.password(), user.getPassword()))
-        {
-            return new AuthResponse(
-                    user.getId(),
-                    user.getUsername(),
-                    user.getFirstName(),
-                    user.getLastName(),
-                    user.getEmail());
-        }
-        else {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Wrong password");
-        }
+        return new LoginResponse(
+                jwtService.generateToken(request.username()),
+                user.getId(),
+                user.getUsername(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getEmail());
     }
 }

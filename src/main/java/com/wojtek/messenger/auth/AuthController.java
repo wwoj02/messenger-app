@@ -1,8 +1,6 @@
 package com.wojtek.messenger.auth;
 
-import com.wojtek.messenger.auth.dto.AuthResponse;
-import com.wojtek.messenger.auth.dto.LoginRequest;
-import com.wojtek.messenger.auth.dto.RegisterRequest;
+import com.wojtek.messenger.auth.dto.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,12 +15,12 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/register")
-    public AuthResponse register(@Valid @RequestBody RegisterRequest request) {
+    public RegisterResponse register(@Valid @RequestBody RegisterRequest request) {
         return authService.register(request);
     }
 
     @PostMapping("/login")
-    public AuthResponse login(@Valid @RequestBody LoginRequest request) {
+    public LoginResponse login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
     }
 }
