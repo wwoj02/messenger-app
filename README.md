@@ -1,8 +1,8 @@
 # Messenger API
 
-Backend for a messenger application built with Spring Boot. The project exposes a REST API for user registration and login, conversation management, and sending and retrieving messages. Authentication is based on JWT.
+Backend for a messenger application built with Spring Boot. It exposes a REST API for authentication, user and conversation management, and message history, plus a WebSocket/STOMP interface for real-time messaging. Authentication is based on JWT.
 
-> Status: work in progress. WebSockets and real-time messaging have not been implemented yet.
+> Status: work in progress. Core REST and real-time messaging flows are implemented; pagination, integration tests, and deployment tooling are planned.
 
 ## Tech stack
 
@@ -12,6 +12,7 @@ Backend for a messenger application built with Spring Boot. The project exposes 
 - Spring Security + JWT
 - Spring Data JPA / Hibernate
 - PostgreSQL
+- Spring WebSocket / STOMP
 - Springdoc OpenAPI / Swagger UI
 - Maven
 
@@ -24,6 +25,9 @@ Backend for a messenger application built with Spring Boot. The project exposes 
 - Creating private and group conversations
 - Conversation membership verification
 - Sending messages and retrieving message history
+- Real-time message delivery via WebSocket/STOMP
+- JWT authentication for STOMP connections
+- Authorization of conversation topic subscriptions
 - Interactive API documentation with Swagger UI
 
 ## Requirements
@@ -110,11 +114,50 @@ Authorization: Bearer <token>
 | POST | `/api/messages` | Yes | Send a message |
 | GET | `/api/messages/{conversationId}` | Yes | Get a conversation's message history |
 
+## Real-time messaging
+
+The WebSocket endpoint is available at:
+
+```text
+ws://localhost:8080/ws
+```
+
+The endpoint uses STOMP. Authenticate by including the JWT in the native `Authorization` header of the `CONNECT` frame:
+
+```text
+Authorization: Bearer <token>
+```
+
+To receive messages from a conversation, subscribe to:
+
+```text
+/topic/conversations/{conversationId}
+```
+
+The server verifies that the authenticated user belongs to the conversation before allowing the subscription.
+
+To send a message in real time, publish to:
+
+```text
+/app/messages
+```
+
+Example payload:
+
+```json
+{
+  "conversationId": 1,
+  "content": "Hello from STOMP"
+}
+```
+
+When the message is saved, it is broadcast to `/topic/conversations/{conversationId}`. REST clients can continue to use `POST /api/messages` and `GET /api/messages/{conversationId}`.
+
 ## Roadmap
 
-- [ ] WebSocket / STOMP support for real-time messaging
-- [ ] JWT authentication for WebSocket connections
 - [ ] Message history pagination
 - [ ] API integration tests
 - [ ] Consistent error handling
 - [ ] Roles and more granular user permissions
+- [ ] Docker Compose setup and deployment configuration
+- [ ] CI pipeline
