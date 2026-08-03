@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
-import java.util.function.Function;
 
 @Service
 public class JwtService {
@@ -36,12 +35,7 @@ public class JwtService {
     }
 
     public String extractUserName(String token) {
-        return extractClaim(token, Claims::getSubject);
-    }
-
-    private <T> T extractClaim(String token, Function<Claims, T> claimResolver) {
-        final Claims claims = extractAllClaims(token);
-        return claimResolver.apply(claims);
+        return extractAllClaims(token).getSubject();
     }
 
     private Claims extractAllClaims(String token) {
@@ -66,6 +60,6 @@ public class JwtService {
     }
 
     private Date extractExpiration(String token) {
-        return extractClaim(token, Claims::getExpiration);
+        return extractAllClaims(token).getExpiration();
     }
 }
